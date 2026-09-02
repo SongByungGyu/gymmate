@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/browser';
-import { GymRegistrar, type GymRegistration } from '@/components/gym-registrar';
+import { GymSearch } from '@/components/gym-search';
+import type { Place } from '@/lib/kakao';
 import type { Profile } from '@/lib/types';
 
 export function SettingsForm({ profile }: { profile: Profile }) {
@@ -22,14 +23,14 @@ export function SettingsForm({ profile }: { profile: Profile }) {
     else router.refresh();
   }
 
-  async function saveGym(reg: GymRegistration) {
+  async function saveGym(place: Place) {
     const supabase = createClient();
     const { error } = await supabase.from('profiles').update({
-      gym_place_id: null,
-      gym_name: reg.name,
-      gym_address: null,
-      gym_lat: reg.lat,
-      gym_lng: reg.lng,
+      gym_place_id: place.id,
+      gym_name: place.place_name,
+      gym_address: place.road_address || place.address,
+      gym_lat: place.lat,
+      gym_lng: place.lng,
     }).eq('id', profile.id);
     if (error) alert('저장 실패');
     else { setGymEdit(false); router.refresh(); }
@@ -72,10 +73,12 @@ export function SettingsForm({ profile }: { profile: Profile }) {
       <section className="space-y-2">
         <label className="text-sm text-gray-600">헬스장</label>
         {gymEdit ? (
-          <GymRegistrar
-            onDone={saveGym}
-            onCancel={() => setGymEdit(false)}
-          />
+          <>
+            <GymSearch onSelect={saveGym} />
+            <button onClick={() => setGymEdit(false)} className="text-sm underline">
+              취소
+            </button>
+          </>
         ) : (
           <div className="border rounded p-3">
             <div className="font-medium">{profile.gym_name}</div>
