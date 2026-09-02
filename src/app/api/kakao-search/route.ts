@@ -19,11 +19,7 @@ export async function GET(request: Request) {
       lng: lng ? Number(lng) : undefined,
     });
     return NextResponse.json({ results });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    const hasKey = !!process.env.KAKAO_REST_API_KEY;
-    const keyLen = process.env.KAKAO_REST_API_KEY?.length ?? 0;
-    console.error('[kakao-search]', { msg, hasKey, keyLen });
-    return NextResponse.json({ error: 'search failed', detail: msg, hasKey, keyLen }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: 'search failed' }, { status: 500 });
   }
 }
