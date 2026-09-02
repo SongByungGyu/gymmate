@@ -2,6 +2,9 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/browser';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Loader2, Camera, CheckCircle2, AlertCircle, Dumbbell } from 'lucide-react';
 
 type Mode = 'idle' | 'gps' | 'photo-required' | 'saving' | 'done' | 'error';
 
@@ -14,7 +17,7 @@ export function CheckInFlow() {
 
   async function start() {
     setMode('gps');
-    setMsg('위치 확인 중...');
+    setMsg('위치를 확인하고 있어요');
     try {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
         if (!navigator.geolocation) return reject(new Error('no geo'));
@@ -25,12 +28,13 @@ export function CheckInFlow() {
       await submit('gps', pos.coords.latitude, pos.coords.longitude);
     } catch {
       setMode('photo-required');
-      setMsg('위치 확인 실패. 사진으로 인증할까요?');
+      setMsg('위치 확인이 어려워요. 사진으로 인증할까요?');
     }
   }
 
   async function submit(method: 'gps' | 'photo', lat?: number, lng?: number, photoPath?: string) {
     setMode('saving');
+    setMsg('저장하고 있어요');
     const res = await fetch('/api/check-in', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -48,15 +52,17 @@ export function CheckInFlow() {
         setMsg(`헬스장에서 ${Math.round(data.distance)}m 떨어져 있어요. 사진으로 인증할까요?`);
       } else {
         setMode('error');
-        setMsg('체크인 실패: ' + (data.error || '알 수 없음'));
+        setMsg('체크인에 실패했어요');
       }
       return;
     }
     setMode('done');
+    setMsg('체크인 완료!');
     setTimeout(() => {
       router.refresh();
       setMode('idle');
       setMemo('');
+      setMsg('');
     }, 1500);
   }
 
@@ -72,47 +78,77 @@ export function CheckInFlow() {
       .from('check-in-photos').upload(path, file, { contentType: file.type });
     if (upErr) {
       setMode('error');
-      setMsg('사진 업로드 실패: ' + upErr.message);
+      setMsg('사진 업로드에 실패했어요');
       return;
     }
     await submit('photo', undefined, undefined, path);
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {mode === 'idle' && (
-        <button onClick={start} className="w-full bg-black text-white rounded py-6 text-lg font-bold">
-          오늘 헬스 감
-        </button>
+        <>
+          <Button onClick={start} className="w-full">
+            <Dumbbell size={20} />
+            오늘 헬스 감
+          </Button>
+          <Input
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            placeholder="오늘 뭐 했나요? (선택)"
+          />
+        </>
       )}
-      {(mode === 'gps' || mode === 'saving') && <p>{msg || '저장중...'}</p>}
+
+      {(mode === 'gps' || mode === 'saving') && (
+        <div className="flex items-center justify-center gap-3 h-14 rounded-[14px] bg-[#EFF6FF] text-[#2563EB]">
+          <Loader2 size={20} className="animate-spin" />
+          <span className="text-[15px] font-semibold">{msg}</span>
+        </div>
+      )}
+
       {mode === 'photo-required' && (
         <div className="space-y-3">
-          <p>{msg}</p>
+          <div className="rounded-[14px] bg-[#EFF6FF] p-4 text-[14px] text-[#1E40AF]">
+            {msg}
+          </div>
           <input
-            ref={fileRef} type="file" accept="image/*" capture="environment"
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
             onChange={submitPhoto}
             className="hidden"
           />
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="w-full bg-black text-white rounded py-4"
-          >카메라로 인증</button>
+          <Button onClick={() => fileRef.current?.click()} className="w-full">
+            <Camera size={20} />
+            사진으로 인증하기
+          </Button>
+          <Input
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            placeholder="오늘 뭐 했나요? (선택)"
+          />
         </div>
       )}
-      {mode === 'done' && <p className="text-green-600 font-bold">체크인 완료!</p>}
-      {mode === 'error' && (
-        <>
-          <p className="text-red-600">{msg}</p>
-          <button onClick={() => setMode('idle')} className="underline">다시 시도</button>
-        </>
+
+      {mode === 'done' && (
+        <div className="flex items-center justify-center gap-3 h-14 rounded-[14px] bg-[#F0FDF4] text-[#166534]">
+          <CheckCircle2 size={22} />
+          <span className="text-[15px] font-semibold">{msg}</span>
+        </div>
       )}
-      {(mode === 'idle' || mode === 'photo-required') && (
-        <input
-          value={memo} onChange={(e) => setMemo(e.target.value)}
-          placeholder="오늘 뭐 했나요? (선택)"
-          className="w-full border rounded px-3 py-2"
-        />
+
+      {mode === 'error' && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 h-14 rounded-[14px] bg-[#FEF2F2] text-[#991B1B] px-4">
+            <AlertCircle size={20} />
+            <span className="text-[15px] font-semibold flex-1">{msg}</span>
+          </div>
+          <Button variant="secondary" onClick={() => setMode('idle')} className="w-full">
+            다시 시도
+          </Button>
+        </div>
       )}
     </div>
   );
