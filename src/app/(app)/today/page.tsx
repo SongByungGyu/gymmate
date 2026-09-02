@@ -2,11 +2,19 @@ import { createClient } from '@/lib/supabase/server';
 import { getWeekRangeKST } from '@/lib/utils/week';
 import { toKstDate } from '@/lib/utils/date';
 import { CheckInFlow } from '@/components/check-in-flow';
-import { Avatar } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
-import { MapPin, Camera } from 'lucide-react';
+import { TodayRecords } from '@/components/today-records';
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일'];
+
+type TodayCheckIn = {
+  id: string;
+  checked_in_at: string;
+  memo: string | null;
+  verification_method: 'gps' | 'photo';
+  photo_url: string | null;
+  photo_signed: string | null;
+};
 
 export default async function Today() {
   const supabase = await createClient();
@@ -24,7 +32,6 @@ export default async function Today() {
   const distinctDays = checkedDates.size;
   const goal = profile?.weekly_goal ?? 3;
 
-  // Build week days array (Mon-Sun with dates matching start)
   const [sy, sm, sd] = start.split('-').map(Number);
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(Date.UTC(sy, sm - 1, sd) + i * 86400000);
@@ -33,23 +40,34 @@ export default async function Today() {
   });
 
   const today = toKstDate();
-  const { data: todayCheckins } = await supabase
+  const { data: todayRows } = await supabase
     .from('check_ins')
-    .select('id, checked_in_at, memo, verification_method')
+    .select('id, checked_in_at, memo, verification_method, photo_url')
     .eq('user_id', user.id).eq('local_date', today)
     .order('checked_in_at', { ascending: false });
+
+  // Generate signed URLs for photo records
+  const todayCheckins: TodayCheckIn[] = await Promise.all(
+    (todayRows ?? []).map(async (c) => {
+      let photo_signed: string | null = null;
+      if (c.photo_url) {
+        const { data } = await supabase.storage
+          .from('check-in-photos')
+          .createSignedUrl(c.photo_url, 3600);
+        photo_signed = data?.signedUrl ?? null;
+      }
+      return { ...c, photo_signed } as TodayCheckIn;
+    })
+  );
 
   const nickname = profile?.nickname ?? '';
 
   return (
     <main className="px-5 pt-6 pb-8 space-y-7">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[14px] text-[#707580]">안녕하세요</p>
-          <h1 className="text-[22px] font-bold text-[#17191F]">{nickname}님</h1>
-        </div>
-        <Avatar name={nickname} size={40} />
+      {/* Header — nickname text only, no avatar */}
+      <div>
+        <p className="text-[14px] text-[#707580]">안녕하세요</p>
+        <h1 className="text-[22px] font-bold text-[#17191F]">{nickname}님</h1>
       </div>
 
       {/* Week progress card */}
@@ -83,47 +101,13 @@ export default async function Today() {
         <Progress value={distinctDays} max={goal} />
       </section>
 
-      {/* Hero CTA */}
       <section>
         <CheckInFlow />
       </section>
 
-      {/* Today's records */}
       <section>
         <h2 className="text-[16px] font-bold text-[#17191F] mb-3">오늘 기록</h2>
-        {todayCheckins && todayCheckins.length > 0 ? (
-          <ul className="space-y-2">
-            {todayCheckins.map((c) => {
-              const isGps = c.verification_method === 'gps';
-              const Icon = isGps ? MapPin : Camera;
-              const label = isGps ? 'GPS 인증' : '사진 인증';
-              const time = new Date(c.checked_in_at).toLocaleTimeString('ko-KR', {
-                hour: '2-digit', minute: '2-digit',
-              });
-              return (
-                <li
-                  key={c.id}
-                  className="flex items-start gap-3 rounded-[14px] bg-white border border-[#E7E7E2] p-4"
-                >
-                  <div className="w-9 h-9 rounded-full bg-[#EFF6FF] flex items-center justify-center shrink-0">
-                    <Icon size={18} className="text-[#2563EB]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[15px] font-semibold text-[#17191F]">{label}</span>
-                      <span className="text-[13px] text-[#9CA3AF]">{time}</span>
-                    </div>
-                    {c.memo && <p className="text-[14px] text-[#707580] mt-0.5">{c.memo}</p>}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="text-[14px] text-[#9CA3AF] py-4 text-center">
-            아직 오늘 기록이 없어요
-          </p>
-        )}
+        <TodayRecords records={todayCheckins} />
       </section>
     </main>
   );

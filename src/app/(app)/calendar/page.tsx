@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/browser';
 import { CalendarView } from '@/components/calendar-view';
+import { PhotoLightbox } from '@/components/photo-lightbox';
+import { MapPin, Camera } from 'lucide-react';
 import type { CheckIn } from '@/lib/types';
 
 type EnrichedCheckIn = CheckIn & { photo_signed?: string | null };
@@ -10,6 +12,7 @@ export default function Calendar() {
   const [checkedDates, setCheckedDates] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [dayCheckins, setDayCheckins] = useState<EnrichedCheckIn[]>([]);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -44,33 +47,73 @@ export default function Calendar() {
     setDayCheckins(enriched);
   }
 
+  const formatDate = (s: string) => {
+    const [y, m, d] = s.split('-').map(Number);
+    return `${m}월 ${d}일`;
+  };
+
   return (
-    <main className="p-6 space-y-6">
-      <h1 className="text-xl font-bold">캘린더</h1>
-      <CalendarView checkedDates={checkedDates} onSelect={pick} />
+    <main className="px-5 pt-6 pb-8 space-y-6">
+      <h1 className="text-[22px] font-bold text-[#17191F]">캘린더</h1>
+      <CalendarView checkedDates={checkedDates} selected={selected} onSelect={pick} />
+
       {selected && (
-        <section>
-          <h2 className="font-bold mb-2">{selected}</h2>
+        <section className="space-y-3">
+          <h2 className="text-[16px] font-bold text-[#17191F]">
+            {formatDate(selected)}
+          </h2>
           {dayCheckins.length === 0 ? (
-            <p className="text-sm text-gray-500">이 날은 기록 없음</p>
+            <p className="text-[14px] text-[#9CA3AF] py-4 text-center">
+              이 날은 기록이 없어요
+            </p>
           ) : (
             <ul className="space-y-2">
-              {dayCheckins.map((c) => (
-                <li key={c.id} className="border rounded p-3">
-                  <div className="text-xs text-gray-500">
-                    {new Date(c.checked_in_at).toLocaleTimeString('ko-KR')} ·{' '}
-                    {c.verification_method === 'gps' ? '📍' : '📷'}
-                  </div>
-                  {c.memo && <p className="mt-1">{c.memo}</p>}
-                  {c.photo_signed && (
-                    <img src={c.photo_signed} alt="" className="mt-2 rounded max-w-xs" />
-                  )}
-                </li>
-              ))}
+              {dayCheckins.map((c) => {
+                const isGps = c.verification_method === 'gps';
+                const Icon = isGps ? MapPin : Camera;
+                const label = isGps ? 'GPS 인증' : '사진 인증';
+                const time = new Date(c.checked_in_at).toLocaleTimeString('ko-KR', {
+                  hour: '2-digit', minute: '2-digit',
+                });
+                return (
+                  <li
+                    key={c.id}
+                    className="rounded-[14px] bg-white border border-[#E7E7E2] p-4"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-full bg-[#EFF6FF] flex items-center justify-center shrink-0">
+                        <Icon size={18} className="text-[#2563EB]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[15px] font-semibold text-[#17191F]">{label}</span>
+                          <span className="text-[13px] text-[#9CA3AF]">{time}</span>
+                        </div>
+                        {c.memo && <p className="text-[14px] text-[#707580] mt-0.5">{c.memo}</p>}
+                      </div>
+                    </div>
+                    {c.photo_signed && (
+                      <button
+                        onClick={() => setLightbox(c.photo_signed!)}
+                        className="mt-3 block w-full aspect-[4/3] rounded-[12px] overflow-hidden bg-[#F7F7F5]"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={c.photo_signed}
+                          alt="체크인 사진"
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
       )}
+
+      {lightbox && <PhotoLightbox url={lightbox} onClose={() => setLightbox(null)} />}
     </main>
   );
 }

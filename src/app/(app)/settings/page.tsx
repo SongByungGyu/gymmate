@@ -9,8 +9,8 @@ export default async function Settings() {
     .from('profiles').select('*').eq('id', user.id).single();
   if (!profile) return null;
   return (
-    <main className="p-6 space-y-6">
-      <h1 className="text-xl font-bold">설정</h1>
+    <main className="px-5 pt-6 pb-8">
+      <h1 className="text-[22px] font-bold text-[#17191F] mb-6">설정</h1>
       <SettingsForm profile={profile} />
     </main>
   );

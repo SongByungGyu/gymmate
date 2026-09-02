@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getWeekRangeKST } from '@/lib/utils/week';
 import { GroupView } from '@/components/group-view';
 import Link from 'next/link';
+import { Users } from 'lucide-react';
 
 export default async function Groups({ searchParams }: { searchParams: Promise<{ g?: string }> }) {
   const { g: selectedId } = await searchParams;
@@ -20,12 +21,25 @@ export default async function Groups({ searchParams }: { searchParams: Promise<{
 
   if (myGroups.length === 0) {
     return (
-      <main className="p-6 space-y-4">
-        <h1 className="text-xl font-bold">그룹</h1>
-        <p className="text-gray-600">아직 소속된 그룹이 없어요.</p>
-        <Link href="/groups/new" className="inline-block bg-black text-white rounded px-4 py-2">
-          새 그룹 만들기
-        </Link>
+      <main className="px-5 pt-6 pb-8">
+        <h1 className="text-[22px] font-bold text-[#17191F] mb-8">그룹</h1>
+        <div className="rounded-[16px] bg-white border border-[#E7E7E2] px-6 py-12 text-center">
+          <div className="w-14 h-14 rounded-full bg-[#EFF6FF] flex items-center justify-center mx-auto mb-4">
+            <Users size={26} className="text-[#2563EB]" />
+          </div>
+          <p className="text-[15px] font-semibold text-[#17191F] mb-1">
+            아직 참여한 그룹이 없어요
+          </p>
+          <p className="text-[13px] text-[#707580] mb-6">
+            친구를 초대하거나 새 그룹을 만들어보세요
+          </p>
+          <Link
+            href="/groups/new"
+            className="inline-flex items-center justify-center h-12 px-6 rounded-[14px] bg-[#2563EB] text-white font-semibold"
+          >
+            새 그룹 만들기
+          </Link>
+        </div>
       </main>
     );
   }

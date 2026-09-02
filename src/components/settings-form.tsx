@@ -3,6 +3,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/browser';
 import { GymRegistrar, type GymRegistration } from '@/components/gym-registrar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { LogOut } from 'lucide-react';
 import type { Profile } from '@/lib/types';
 
 export function SettingsForm({ profile }: { profile: Profile }) {
@@ -18,7 +21,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
     const { error } = await supabase.from('profiles')
       .update({ nickname, weekly_goal: goal }).eq('id', profile.id);
     setSaving(false);
-    if (error) alert('저장 실패');
+    if (error) alert('저장에 실패했어요');
     else router.refresh();
   }
 
@@ -31,7 +34,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
       gym_lat: reg.lat,
       gym_lng: reg.lng,
     }).eq('id', profile.id);
-    if (error) alert('저장 실패');
+    if (error) alert('저장에 실패했어요');
     else { setGymEdit(false); router.refresh(); }
   }
 
@@ -43,57 +46,73 @@ export function SettingsForm({ profile }: { profile: Profile }) {
 
   return (
     <div className="space-y-6">
-      <section className="space-y-2">
-        <label className="text-sm text-gray-600">닉네임</label>
-        <input
-          value={nickname} onChange={(e) => setNickname(e.target.value)}
-          className="w-full border rounded px-3 py-2"
-        />
-      </section>
-
-      <section className="space-y-2">
-        <label className="text-sm text-gray-600">주간 목표</label>
-        <div className="grid grid-cols-3 gap-2">
-          {[2, 3, 4, 5, 6, 7].map((n) => (
-            <button
-              key={n}
-              onClick={() => setGoal(n)}
-              className={`py-2 border rounded ${goal === n ? 'bg-black text-white' : ''}`}
-            >주 {n}회</button>
-          ))}
+      <section>
+        <h2 className="text-[13px] font-semibold text-[#707580] mb-2 px-1">프로필</h2>
+        <div className="rounded-[16px] bg-white border border-[#E7E7E2] p-4 space-y-3">
+          <div>
+            <label className="text-[13px] text-[#707580] mb-1.5 block">닉네임</label>
+            <Input
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+            />
+          </div>
         </div>
       </section>
 
-      <button
-        onClick={saveBasic} disabled={saving}
-        className="w-full bg-black text-white rounded py-3"
-      >저장</button>
+      <section>
+        <h2 className="text-[13px] font-semibold text-[#707580] mb-2 px-1">주간 목표</h2>
+        <div className="rounded-[16px] bg-white border border-[#E7E7E2] p-4">
+          <p className="text-[13px] text-[#707580] mb-3">일주일에 몇 번 운동할까요?</p>
+          <div className="grid grid-cols-3 gap-2">
+            {[2, 3, 4, 5, 6, 7].map((n) => (
+              <button
+                key={n}
+                onClick={() => setGoal(n)}
+                className={`h-12 rounded-[10px] text-[14px] font-semibold border transition-colors ${
+                  goal === n
+                    ? 'bg-[#2563EB] text-white border-[#2563EB]'
+                    : 'bg-white text-[#17191F] border-[#E7E7E2]'
+                }`}
+              >주 {n}회</button>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      <section className="space-y-2">
-        <label className="text-sm text-gray-600">헬스장</label>
+      <Button onClick={saveBasic} disabled={saving} className="w-full">
+        {saving ? '저장 중...' : '저장'}
+      </Button>
+
+      <section>
+        <h2 className="text-[13px] font-semibold text-[#707580] mb-2 px-1">헬스장</h2>
         {gymEdit ? (
-          <GymRegistrar
-            onDone={saveGym}
-            onCancel={() => setGymEdit(false)}
-          />
+          <div className="rounded-[16px] bg-white border border-[#E7E7E2] p-4">
+            <GymRegistrar
+              onDone={saveGym}
+              onCancel={() => setGymEdit(false)}
+            />
+          </div>
         ) : (
-          <div className="border rounded p-3">
-            <div className="font-medium">{profile.gym_name}</div>
-            <div className="text-sm text-gray-600">{profile.gym_address}</div>
+          <div className="rounded-[16px] bg-white border border-[#E7E7E2] p-4">
+            <div className="text-[15px] font-semibold text-[#17191F]">{profile.gym_name}</div>
+            {profile.gym_address && (
+              <div className="text-[13px] text-[#707580] mt-0.5">{profile.gym_address}</div>
+            )}
             <button
               onClick={() => setGymEdit(true)}
-              className="mt-2 text-sm underline"
-            >변경</button>
+              className="mt-3 text-[13px] font-semibold text-[#2563EB]"
+            >헬스장 변경</button>
           </div>
         )}
       </section>
 
-      <hr />
-
       <button
         onClick={logout}
-        className="w-full border rounded py-2 text-red-600"
-      >로그아웃</button>
+        className="w-full h-12 rounded-[14px] bg-white border border-[#FEE2E2] text-[15px] font-semibold text-[#EF4444] flex items-center justify-center gap-2"
+      >
+        <LogOut size={18} />
+        로그아웃
+      </button>
     </div>
   );
 }
