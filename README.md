@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 짐메이트 (GymMate)
 
-## Getting Started
+친구끼리 헬스장 출석을 공유하고 주간 목표 달성률을 겨루는 PWA.
 
-First, run the development server:
+- 스펙: [docs/specs/2026-09-02-design.md](docs/specs/2026-09-02-design.md)
+- 구현 계획: [docs/plans/2026-09-02-implementation.md](docs/plans/2026-09-02-implementation.md)
+
+## 스택
+
+Next.js 16 · React 19 · Tailwind v4 · Supabase (Auth/Postgres/Storage/RLS) · Naver 지역검색 · Vercel
+
+## 개발
 
 ```bash
+npm install
+cp .env.local.example .env.local  # 값 채우기
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env.local` 에 필요한 값:
+- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY`
+- `NAVER_CLIENT_ID` / `NAVER_CLIENT_SECRET`
+- `NEXT_PUBLIC_SITE_URL` (dev: `http://localhost:3000`)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 테스트
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm test
+```
 
-## Learn More
+거리 계산 / 주간 계산 / KST 날짜 유틸에 대한 단위 테스트.
 
-To learn more about Next.js, take a look at the following resources:
+## 배포
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+GitHub push → Vercel 자동 빌드/배포. 환경변수는 Vercel 대시보드에서 설정.
