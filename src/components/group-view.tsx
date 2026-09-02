@@ -102,8 +102,40 @@ export function GroupView(props: {
       </section>
 
       {isAdmin && (
-        <section>
-          <p className="text-xs text-gray-500">방장 도구는 다음 태스크에서 추가</p>
+        <section className="space-y-3">
+          <h2 className="font-bold">방장 도구</h2>
+          <button
+            onClick={async () => {
+              if (!confirm('새 링크를 발급하면 기존 링크는 무효화됩니다. 진행할까요?')) return;
+              const res = await fetch(`/api/groups/${activeGroup.id}/invite-refresh`, { method: 'POST' });
+              if (res.ok) location.reload();
+              else alert('실패');
+            }}
+            className="w-full border rounded py-2"
+          >새 초대 링크 발급</button>
+          <div>
+            <p className="text-sm text-gray-600 mb-1">멤버 관리</p>
+            <ul className="space-y-1">
+              {stats.filter((s) => s.userId !== currentUserId).map((s) => (
+                <li key={s.userId} className="flex justify-between items-center border rounded p-2">
+                  <span>{s.nickname}</span>
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`${s.nickname}님을 추방할까요?`)) return;
+                      const res = await fetch(`/api/groups/${activeGroup.id}/kick`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: s.userId }),
+                      });
+                      if (res.ok) location.reload();
+                      else alert('실패');
+                    }}
+                    className="text-red-600 text-sm"
+                  >추방</button>
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
       )}
     </main>
