@@ -28,6 +28,7 @@ export async function updateSession(request: NextRequest) {
     path === '/' ||
     path.startsWith('/login') ||
     path.startsWith('/auth') ||
+    path.startsWith('/api/auth/kakao') ||
     path.startsWith('/join');
 
   if (!user && !isPublic) {
