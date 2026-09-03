@@ -80,7 +80,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
       </section>
 
       <Button onClick={saveBasic} disabled={saving} className="w-full">
-        {saving ? '저장 중...' : '저장'}
+        {saving ? '저장 중...' : '프로필·목표 저장'}
       </Button>
 
       <section>
