@@ -21,13 +21,24 @@ export default async function Today() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: profile } = await supabase
-    .from('profiles').select('nickname, weekly_goal').eq('id', user.id).single();
-
   const { start, end } = getWeekRangeKST();
-  const { data: weekCheckins } = await supabase
-    .from('check_ins').select('local_date')
-    .eq('user_id', user.id).gte('local_date', start).lte('local_date', end);
+  const today = toKstDate();
+
+  // Run the 3 independent queries in parallel — they don't depend on each other.
+  const [
+    { data: profile },
+    { data: weekCheckins },
+    { data: todayRows },
+  ] = await Promise.all([
+    supabase.from('profiles').select('nickname, weekly_goal').eq('id', user.id).single(),
+    supabase.from('check_ins').select('local_date')
+      .eq('user_id', user.id).gte('local_date', start).lte('local_date', end),
+    supabase.from('check_ins')
+      .select('id, checked_in_at, memo, verification_method, photo_url')
+      .eq('user_id', user.id).eq('local_date', today)
+      .order('checked_in_at', { ascending: false }),
+  ]);
+
   const checkedDates = new Set((weekCheckins ?? []).map((c) => c.local_date));
   const distinctDays = checkedDates.size;
   const goal = profile?.weekly_goal ?? 3;
@@ -39,26 +50,21 @@ export default async function Today() {
     return { label: WEEKDAYS[i], dateStr, checked: checkedDates.has(dateStr) };
   });
 
-  const today = toKstDate();
-  const { data: todayRows } = await supabase
-    .from('check_ins')
-    .select('id, checked_in_at, memo, verification_method, photo_url')
-    .eq('user_id', user.id).eq('local_date', today)
-    .order('checked_in_at', { ascending: false });
-
-  // Generate signed URLs for photo records
-  const todayCheckins: TodayCheckIn[] = await Promise.all(
-    (todayRows ?? []).map(async (c) => {
-      let photo_signed: string | null = null;
-      if (c.photo_url) {
-        const { data } = await supabase.storage
-          .from('check-in-photos')
-          .createSignedUrl(c.photo_url, 3600);
-        photo_signed = data?.signedUrl ?? null;
-      }
-      return { ...c, photo_signed } as TodayCheckIn;
-    })
-  );
+  // Batch all photo signed URLs in a single Storage call.
+  const rows = todayRows ?? [];
+  const photoPaths = rows.map((r) => r.photo_url).filter((p): p is string => !!p);
+  const signedMap = new Map<string, string>();
+  if (photoPaths.length > 0) {
+    const { data: signed } = await supabase.storage
+      .from('check-in-photos').createSignedUrls(photoPaths, 3600);
+    for (const s of signed ?? []) {
+      if (s.path && s.signedUrl) signedMap.set(s.path, s.signedUrl);
+    }
+  }
+  const todayCheckins: TodayCheckIn[] = rows.map((c) => ({
+    ...c,
+    photo_signed: c.photo_url ? signedMap.get(c.photo_url) ?? null : null,
+  }));
 
   const nickname = profile?.nickname ?? '';
 

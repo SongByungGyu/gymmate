@@ -36,15 +36,19 @@ export default function Calendar() {
       .eq('user_id', user.id).eq('local_date', date)
       .order('checked_in_at', { ascending: false });
     const rows = (data ?? []) as CheckIn[];
-    const enriched = await Promise.all(
-      rows.map(async (c) => {
-        if (!c.photo_url) return { ...c, photo_signed: null };
-        const { data: sig } = await supabase.storage
-          .from('check-in-photos').createSignedUrl(c.photo_url, 3600);
-        return { ...c, photo_signed: sig?.signedUrl ?? null };
-      })
-    );
-    setDayCheckins(enriched);
+    const photoPaths = rows.map((r) => r.photo_url).filter((p): p is string => !!p);
+    const signedMap = new Map<string, string>();
+    if (photoPaths.length > 0) {
+      const { data: signed } = await supabase.storage
+        .from('check-in-photos').createSignedUrls(photoPaths, 3600);
+      for (const s of signed ?? []) {
+        if (s.path && s.signedUrl) signedMap.set(s.path, s.signedUrl);
+      }
+    }
+    setDayCheckins(rows.map((c) => ({
+      ...c,
+      photo_signed: c.photo_url ? signedMap.get(c.photo_url) ?? null : null,
+    })));
   }
 
   const formatDate = (s: string) => {

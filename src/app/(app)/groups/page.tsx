@@ -46,25 +46,30 @@ export default async function Groups({ searchParams }: { searchParams: Promise<{
 
   const active = myGroups.find((g) => g.id === selectedId) ?? myGroups[0];
 
+  // Members must be fetched first (memberIds are needed for check_ins queries).
   const { data: members } = await supabase
     .from('group_members').select('user_id, profiles(id, nickname, weekly_goal)')
     .eq('group_id', active.id);
 
   type MemberRow = { user_id: string; profiles: { id: string; nickname: string; weekly_goal: number } | { id: string; nickname: string; weekly_goal: number }[] | null };
   const memberRows = (members ?? []) as MemberRow[];
-
   const memberIds = memberRows.map((m) => m.user_id);
   const { start, end } = getWeekRangeKST();
-  const { data: weekCheckins } = await supabase
-    .from('check_ins').select('user_id, local_date')
-    .in('user_id', memberIds)
-    .gte('local_date', start).lte('local_date', end);
 
-  const { data: recent } = await supabase
-    .from('check_ins').select('id, user_id, checked_in_at, verification_method, memo, photo_url')
-    .in('user_id', memberIds)
-    .order('checked_in_at', { ascending: false })
-    .limit(20);
+  // Run week stats + recent activity in parallel (both depend only on memberIds).
+  const [
+    { data: weekCheckins },
+    { data: recent },
+  ] = await Promise.all([
+    supabase.from('check_ins').select('user_id, local_date')
+      .in('user_id', memberIds)
+      .gte('local_date', start).lte('local_date', end),
+    supabase.from('check_ins')
+      .select('id, user_id, checked_in_at, verification_method, memo, photo_url')
+      .in('user_id', memberIds)
+      .order('checked_in_at', { ascending: false })
+      .limit(20),
+  ]);
 
   const stats = memberRows.map((m) => {
     const p = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
@@ -84,19 +89,20 @@ export default async function Groups({ searchParams }: { searchParams: Promise<{
     verification_method: 'gps' | 'photo'; memo: string | null; photo_url: string | null;
   }>;
 
-  // signed URL 생성
-  const recentEnriched = await Promise.all(recentRows.map(async (r) => {
-    let photo_signed: string | null = null;
-    if (r.photo_url) {
-      const { data } = await supabase.storage
-        .from('check-in-photos').createSignedUrl(r.photo_url, 3600);
-      photo_signed = data?.signedUrl ?? null;
+  // Batch all photo signed URLs in a single Storage call.
+  const photoPaths = recentRows.map((r) => r.photo_url).filter((p): p is string => !!p);
+  const signedMap = new Map<string, string>();
+  if (photoPaths.length > 0) {
+    const { data: signed } = await supabase.storage
+      .from('check-in-photos').createSignedUrls(photoPaths, 3600);
+    for (const s of signed ?? []) {
+      if (s.path && s.signedUrl) signedMap.set(s.path, s.signedUrl);
     }
-    return {
-      ...r,
-      nickname: stats.find((s) => s.userId === r.user_id)?.nickname ?? '',
-      photo_signed,
-    };
+  }
+  const recentEnriched = recentRows.map((r) => ({
+    ...r,
+    nickname: stats.find((s) => s.userId === r.user_id)?.nickname ?? '',
+    photo_signed: r.photo_url ? signedMap.get(r.photo_url) ?? null : null,
   }));
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
