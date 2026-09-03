@@ -76,7 +76,7 @@ export default async function Today() {
           <p className="text-[14px] text-[#707580]">이번 주</p>
           <p className="text-[14px] text-[#17191F]">
             <span className="text-[18px] font-bold">{distinctDays}</span>
-            <span className="text-[#9CA3AF]"> / {goal}회</span>
+            <span className="text-[#9CA3AF]"> / {goal}일</span>
           </p>
         </div>
         <div className="grid grid-cols-7 gap-1.5 mb-4">

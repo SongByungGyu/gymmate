@@ -8,10 +8,13 @@ import { Loader2, Camera, CheckCircle2, AlertCircle, Dumbbell } from 'lucide-rea
 
 type Mode = 'idle' | 'gps' | 'photo-required' | 'saving' | 'done' | 'error';
 
+const PHOTO_PROMPT = '사진으로 인증할까요?';
+
 export function CheckInFlow() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>('idle');
   const [msg, setMsg] = useState('');
+  const [promptReason, setPromptReason] = useState('');
   const [memo, setMemo] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -28,7 +31,7 @@ export function CheckInFlow() {
       await submit('gps', pos.coords.latitude, pos.coords.longitude);
     } catch {
       setMode('photo-required');
-      setMsg('위치 확인이 어려워요. 사진으로 인증할까요?');
+      setPromptReason('위치 확인이 어려워요.');
     }
   }
 
@@ -49,7 +52,7 @@ export function CheckInFlow() {
     if (!res.ok) {
       if (data.error === 'too far') {
         setMode('photo-required');
-        setMsg(`헬스장에서 ${Math.round(data.distance)}m 떨어져 있어요. 사진으로 인증할까요?`);
+        setPromptReason(`헬스장에서 ${Math.round(data.distance)}m 떨어져 있어요.`);
       } else {
         setMode('error');
         setMsg('체크인에 실패했어요');
@@ -63,6 +66,7 @@ export function CheckInFlow() {
       setMode('idle');
       setMemo('');
       setMsg('');
+      setPromptReason('');
     }, 1500);
   }
 
@@ -88,8 +92,8 @@ export function CheckInFlow() {
     <div className="space-y-3">
       {mode === 'idle' && (
         <>
-          <Button onClick={start} className="w-full">
-            <Dumbbell size={20} />
+          <Button onClick={start} className="w-full h-16 text-[17px]">
+            <Dumbbell size={22} />
             오늘 헬스 감
           </Button>
           <Input
@@ -109,8 +113,9 @@ export function CheckInFlow() {
 
       {mode === 'photo-required' && (
         <div className="space-y-3">
-          <div className="rounded-[14px] bg-[#EFF6FF] p-4 text-[14px] text-[#1E40AF]">
-            {msg}
+          <div className="rounded-[14px] bg-[#EFF6FF] p-4 text-[14px] text-[#1E40AF] break-keep">
+            <p>{promptReason}</p>
+            <p>{PHOTO_PROMPT}</p>
           </div>
           <input
             ref={fileRef}

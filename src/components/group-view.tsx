@@ -116,7 +116,7 @@ export function GroupView(props: {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[14px] text-[#707580]">
-                      {s.days} / {s.goal}회
+                      {s.days} / {s.goal}일
                     </span>
                     {showAdminMenu && (
                       <button
@@ -184,7 +184,7 @@ export function GroupView(props: {
                   {r.photo_signed && (
                     <button
                       onClick={() => setLightbox(r.photo_signed!)}
-                      className="mt-3 block w-full aspect-[4/3] rounded-[12px] overflow-hidden bg-[#F7F7F5]"
+                      className="mt-3 block w-full aspect-[3/2] max-h-[240px] rounded-[12px] overflow-hidden bg-[#F7F7F5]"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img

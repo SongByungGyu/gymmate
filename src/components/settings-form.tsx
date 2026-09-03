@@ -62,7 +62,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
       <section>
         <h2 className="text-[13px] font-semibold text-[#707580] mb-2 px-1">주간 목표</h2>
         <div className="rounded-[16px] bg-white border border-[#E7E7E2] p-4">
-          <p className="text-[13px] text-[#707580] mb-3">일주일에 몇 번 운동할까요?</p>
+          <p className="text-[13px] text-[#707580] mb-3">일주일에 며칠 운동할까요?</p>
           <div className="grid grid-cols-3 gap-2">
             {[2, 3, 4, 5, 6, 7].map((n) => (
               <button
@@ -73,7 +73,7 @@ export function SettingsForm({ profile }: { profile: Profile }) {
                     ? 'bg-[#2563EB] text-white border-[#2563EB]'
                     : 'bg-white text-[#17191F] border-[#E7E7E2]'
                 }`}
-              >주 {n}회</button>
+              >주 {n}일</button>
             ))}
           </div>
         </div>

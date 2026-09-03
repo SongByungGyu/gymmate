@@ -64,7 +64,7 @@ export default function Calendar() {
           </h2>
           {dayCheckins.length === 0 ? (
             <p className="text-[14px] text-[#9CA3AF] py-4 text-center">
-              이 날은 기록이 없어요
+              이 날은 운동 기록이 없어요
             </p>
           ) : (
             <ul className="space-y-2">
@@ -95,7 +95,7 @@ export default function Calendar() {
                     {c.photo_signed && (
                       <button
                         onClick={() => setLightbox(c.photo_signed!)}
-                        className="mt-3 block w-full aspect-[4/3] rounded-[12px] overflow-hidden bg-[#F7F7F5]"
+                        className="mt-3 block w-full aspect-[3/2] max-h-[240px] rounded-[12px] overflow-hidden bg-[#F7F7F5]"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img

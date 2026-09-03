@@ -11,8 +11,22 @@ export default async function Join({ params }: { params: Promise<{ code: string 
 
   if (!group) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6">
-        <p className="text-[15px] text-[#707580]">유효하지 않은 링크입니다.</p>
+      <main className="min-h-screen flex flex-col justify-center px-5 py-8 max-w-[428px] mx-auto text-center">
+        <div className="w-12 h-12 rounded-full bg-[#FEF2F2] flex items-center justify-center mx-auto mb-4">
+          <Users size={24} className="text-[#EF4444]" />
+        </div>
+        <p className="text-[15px] font-semibold text-[#17191F] mb-1">
+          유효하지 않은 초대 링크예요
+        </p>
+        <p className="text-[13px] text-[#707580] mb-6">
+          링크가 만료되었거나 잘못됐을 수 있어요
+        </p>
+        <Link
+          href="/today"
+          className="inline-flex items-center justify-center h-12 px-6 rounded-[14px] bg-white border border-[#E7E7E2] text-[#17191F] font-semibold mx-auto"
+        >
+          홈으로
+        </Link>
       </main>
     );
   }

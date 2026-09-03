@@ -20,16 +20,17 @@ export function TabBar() {
       <div className="mx-auto max-w-[428px] flex">
         {tabs.map((t) => {
           const active = pathname.startsWith(t.href);
-          const color = active ? '#2563EB' : '#9CA3AF';
+          const color = active ? '#2563EB' : '#707580';
           return (
             <Link
               key={t.href}
               href={t.href}
-              className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5"
+              className="flex-1 min-h-[56px] flex flex-col items-center justify-center gap-1 py-2"
               style={{ color }}
+              aria-current={active ? 'page' : undefined}
             >
               <t.Icon size={22} strokeWidth={active ? 2.5 : 2} />
-              <span className={`text-[11px] ${active ? 'font-semibold' : 'font-medium'}`}>
+              <span className={`text-[12px] ${active ? 'font-semibold' : 'font-medium'}`}>
                 {t.label}
               </span>
             </Link>

@@ -23,9 +23,9 @@ export default async function Groups({ searchParams }: { searchParams: Promise<{
     return (
       <main className="px-5 pt-6 pb-8">
         <h1 className="text-[22px] font-bold text-[#17191F] mb-8">그룹</h1>
-        <div className="rounded-[16px] bg-white border border-[#E7E7E2] px-6 py-12 text-center">
-          <div className="w-14 h-14 rounded-full bg-[#EFF6FF] flex items-center justify-center mx-auto mb-4">
-            <Users size={26} className="text-[#2563EB]" />
+        <div className="pt-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-[#EFF6FF] flex items-center justify-center mx-auto mb-4">
+            <Users size={24} className="text-[#2563EB]" />
           </div>
           <p className="text-[15px] font-semibold text-[#17191F] mb-1">
             아직 참여한 그룹이 없어요

@@ -53,7 +53,7 @@ export function TodayRecords({ records }: { records: Record[] }) {
               {c.photo_signed && (
                 <button
                   onClick={() => setLightbox(c.photo_signed)}
-                  className="mt-3 block w-full aspect-[4/3] rounded-[12px] overflow-hidden bg-[#F7F7F5]"
+                  className="mt-3 block w-full aspect-[3/2] max-h-[240px] rounded-[12px] overflow-hidden bg-[#F7F7F5]"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
