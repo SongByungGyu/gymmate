@@ -15,7 +15,7 @@ export function TabBar() {
   return (
     <nav
       className="fixed bottom-0 inset-x-0 border-t border-[#E7E7E2] bg-white"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 4px)' }}
     >
       <div className="mx-auto max-w-[428px] flex">
         {tabs.map((t) => {

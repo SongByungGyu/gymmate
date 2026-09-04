@@ -14,6 +14,9 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // iPhone 홈 인디케이터 등 safe-area까지 뷰포트를 확장. 이게 없으면
+  // env(safe-area-inset-*) 값이 0으로 계산돼 하단 탭바가 인디케이터를 침범.
+  viewportFit: 'cover' as const,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
