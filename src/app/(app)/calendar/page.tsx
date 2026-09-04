@@ -19,10 +19,36 @@ export default function Calendar() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase
-        .from('check_ins').select('local_date')
-        .eq('user_id', user.id);
-      setCheckedDates([...new Set((data ?? []).map((r) => r.local_date))]);
+
+      // 오늘 날짜 (브라우저 로컬 기준 — CalendarView의 today 판정과 일치)
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      // 월 그리드 dot 표시용 전체 날짜 + 오늘 상세 병렬 조회
+      const [allRes, dayRes] = await Promise.all([
+        supabase.from('check_ins').select('local_date').eq('user_id', user.id),
+        supabase.from('check_ins').select('*')
+          .eq('user_id', user.id).eq('local_date', todayStr)
+          .order('checked_in_at', { ascending: false }),
+      ]);
+
+      setCheckedDates([...new Set((allRes.data ?? []).map((r) => r.local_date))]);
+
+      const rows = (dayRes.data ?? []) as CheckIn[];
+      const photoPaths = rows.map((r) => r.photo_url).filter((p): p is string => !!p);
+      const signedMap = new Map<string, string>();
+      if (photoPaths.length > 0) {
+        const { data: signed } = await supabase.storage
+          .from('check-in-photos').createSignedUrls(photoPaths, 3600);
+        for (const s of signed ?? []) {
+          if (s.path && s.signedUrl) signedMap.set(s.path, s.signedUrl);
+        }
+      }
+      setSelected(todayStr);
+      setDayCheckins(rows.map((c) => ({
+        ...c,
+        photo_signed: c.photo_url ? signedMap.get(c.photo_url) ?? null : null,
+      })));
     })();
   }, []);
 
