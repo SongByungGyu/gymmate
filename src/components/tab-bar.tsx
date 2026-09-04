@@ -25,6 +25,7 @@ export function TabBar() {
             <Link
               key={t.href}
               href={t.href}
+              prefetch={true}
               className="flex-1 min-h-[56px] flex flex-col items-center justify-center gap-1 py-2"
               style={{ color }}
               aria-current={active ? 'page' : undefined}
