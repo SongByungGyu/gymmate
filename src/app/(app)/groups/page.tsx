@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { getWeekRangeKST } from '@/lib/utils/week';
+import { toKstDate } from '@/lib/utils/date';
 import { GroupView } from '@/components/group-view';
 import Link from 'next/link';
 import { Users } from 'lucide-react';
@@ -71,6 +72,12 @@ export default async function Groups({ searchParams }: { searchParams: Promise<{
       .limit(20),
   ]);
 
+  // 오늘 체크인한 user_id 집합 — 각 멤버 행의 오늘 dot 표시에 사용.
+  const today = toKstDate();
+  const todayDoneUsers = new Set(
+    (weekCheckins ?? []).filter((c) => c.local_date === today).map((c) => c.user_id)
+  );
+
   const stats = memberRows.map((m) => {
     const p = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
     const days = new Set(
@@ -81,6 +88,7 @@ export default async function Groups({ searchParams }: { searchParams: Promise<{
       nickname: p?.nickname ?? '',
       goal: p?.weekly_goal ?? 3,
       days,
+      todayDone: todayDoneUsers.has(m.user_id),
     };
   });
 

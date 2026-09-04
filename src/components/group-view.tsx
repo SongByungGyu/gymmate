@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { PhotoLightbox } from '@/components/photo-lightbox';
 
 type Group = { id: string; name: string; invite_code: string; created_by: string };
-type Stat = { userId: string; nickname: string; goal: number; days: number };
+type Stat = { userId: string; nickname: string; goal: number; days: number; todayDone: boolean };
 type Recent = {
   id: string; user_id: string; nickname: string; checked_in_at: string;
   verification_method: 'gps' | 'photo'; memo: string | null; photo_url: string | null;
@@ -93,18 +93,22 @@ export function GroupView(props: {
         </span>
       </button>
 
-      {/* Weekly progress per member — nickname only, no avatars */}
+      {/* Weekly progress per member — nickname only, no avatars.
+          오늘 완료 여부는 nickname 왼쪽 작은 dot으로 표시 (초록=완료 / 회색=아직) */}
       <section>
         <h2 className="text-[16px] font-bold text-[#17191F] mb-3">이번주 달성률</h2>
         <ul className="space-y-4">
           {stats.map((s) => {
-            const pct = s.goal > 0 ? Math.round((s.days / s.goal) * 100) : 0;
             const isMe = s.userId === currentUserId;
             const showAdminMenu = isAdmin && !isMe;
             return (
               <li key={s.userId} className="relative">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 ${s.todayDone ? 'bg-[#22C55E]' : 'bg-[#E2E8F0]'}`}
+                      aria-label={s.todayDone ? '오늘 완료' : '오늘 아직'}
+                    />
                     <span className="text-[15px] font-semibold text-[#17191F] truncate">
                       {s.nickname}
                     </span>
