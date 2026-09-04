@@ -1,12 +1,12 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/browser';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Camera, CheckCircle2, AlertCircle, Dumbbell } from 'lucide-react';
+import { Loader2, Camera, CheckCircle2, AlertCircle, Dumbbell, RotateCcw } from 'lucide-react';
 
-type Mode = 'idle' | 'gps' | 'photo-required' | 'saving' | 'done' | 'error';
+type Mode = 'idle' | 'gps' | 'photo-required' | 'photo-preview' | 'saving' | 'done' | 'error';
 
 const PHOTO_PROMPT = '사진으로 인증할까요?';
 
@@ -16,7 +16,16 @@ export function CheckInFlow() {
   const [msg, setMsg] = useState('');
   const [promptReason, setPromptReason] = useState('');
   const [memo, setMemo] = useState('');
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // preview object URL 메모리 정리
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   async function start() {
     setMode('gps');
@@ -63,19 +72,49 @@ export function CheckInFlow() {
     setMsg('체크인 완료!');
     setTimeout(() => {
       router.refresh();
-      setMode('idle');
-      setMemo('');
-      setMsg('');
-      setPromptReason('');
+      resetAll();
     }, 1500);
   }
 
-  async function submitPhoto() {
+  function resetAll() {
+    setMode('idle');
+    setMemo('');
+    setMsg('');
+    setPromptReason('');
+    clearPreview();
+  }
+
+  function clearPreview() {
+    setPreviewFile(null);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    if (fileRef.current) fileRef.current.value = '';
+  }
+
+  function onFileSelected() {
     const file = fileRef.current?.files?.[0];
     if (!file) return;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setMode('photo-preview');
+  }
+
+  function retake() {
+    clearPreview();
+    setMode('photo-required');
+    // 다음 tick에 카메라 다시 오픈
+    setTimeout(() => fileRef.current?.click(), 0);
+  }
+
+  async function confirmPhoto() {
+    if (!previewFile) return;
+    const file = previewFile;
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    setMode('saving');
+    setMsg('사진 업로드 중이에요');
     const ext = file.name.split('.').pop() || 'jpg';
     const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
     const { error: upErr } = await supabase.storage
@@ -86,6 +125,7 @@ export function CheckInFlow() {
       return;
     }
     await submit('photo', undefined, undefined, path);
+    clearPreview();
   }
 
   return (
@@ -122,13 +162,48 @@ export function CheckInFlow() {
             type="file"
             accept="image/*"
             capture="environment"
-            onChange={submitPhoto}
+            onChange={onFileSelected}
             className="hidden"
           />
           <Button onClick={() => fileRef.current?.click()} className="w-full">
             <Camera size={20} />
             사진으로 인증하기
           </Button>
+          <Input
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            placeholder="오늘 뭐 했나요? (선택)"
+          />
+        </div>
+      )}
+
+      {mode === 'photo-preview' && previewUrl && (
+        <div className="space-y-3">
+          <div className="w-full aspect-[3/2] max-h-[280px] rounded-[14px] overflow-hidden bg-[#F7F7F5]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewUrl}
+              alt="촬영한 사진 미리보기"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <p className="text-[13px] text-[#707580] text-center">
+            이 사진으로 인증할까요?
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={retake}
+              className="flex-1"
+            >
+              <RotateCcw size={18} />
+              다시 찍기
+            </Button>
+            <Button onClick={confirmPhoto} className="flex-1">
+              <CheckCircle2 size={20} />
+              인증하기
+            </Button>
+          </div>
           <Input
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
@@ -150,7 +225,7 @@ export function CheckInFlow() {
             <AlertCircle size={20} />
             <span className="text-[15px] font-semibold flex-1">{msg}</span>
           </div>
-          <Button variant="secondary" onClick={() => setMode('idle')} className="w-full">
+          <Button variant="secondary" onClick={resetAll} className="w-full">
             다시 시도
           </Button>
         </div>
